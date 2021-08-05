@@ -40,7 +40,7 @@ class Character
 
         return $this->adapter->get(
             "/characters/profile",
-            $this->params
+            $params
         );
     }
 }
