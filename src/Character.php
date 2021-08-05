@@ -20,7 +20,6 @@ class Character
         $this->adapter = $adapter;
     }
 
-
     /**
      * This method gets the mythic plus scores from the raider.io profile. It includes best runs and alt runs which
      * will include both fortified and tyrannical settings.
@@ -32,7 +31,6 @@ class Character
      */
     public function getMythicPlusScores(string $character, string $realm, string $region) : array
     {
-        https://raider.io/api/v1/characters/profile?region=us&realm=aerie-peak&name=lokiwise&fields=mythic_plus_best_runs%3Aall%2Cmythic_plus_alternate_runs%3Aall
         $params = [
             'region' => $region,
             'realm' => $realm,
