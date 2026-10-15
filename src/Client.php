@@ -1,21 +1,25 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Fusani\RaiderIO;
 
-use Fusani\RaiderIO\Adapter;
+use Fusani\RaiderIO\Adapter\Adapter;
 
+/**
+ * Holds the adapter used to call the api.
+ */
 class Client
 {
     // a way to connect to the api
-    protected $adapter;
+    protected Adapter $adapter;
 
     /**
-     * This function initializes the client by setting the adapter.
+     * Builds the client with the adapter it uses to call the api.
      *
-     * @param Adapter\Adapter $adapter : an adapter for interfacing with the api
-     * @return void
+     * @param Adapter $adapter an adapter for interfacing with the api
      */
-    public function __construct(Adapter\Adapter $adapter)
+    public function __construct(Adapter $adapter)
     {
         $this->adapter = $adapter;
     }

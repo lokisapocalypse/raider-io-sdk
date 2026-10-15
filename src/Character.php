@@ -1,45 +1,49 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Fusani\RaiderIO;
 
-use Fusani\RaiderIO\Adapter;
+use Fusani\RaiderIO\Adapter\Adapter;
 
+/**
+ * Service for the Raider.IO character endpoints.
+ */
 class Character
 {
     // a way to connect to the api
-    protected $adapter;
+    protected Adapter $adapter;
 
     /**
-     * This function initializes the client by setting the adapter.
+     * Builds the service with the adapter it uses to call the api.
      *
-     * @param Adapter\Adapter $adapter : an adapter for interfacing with the api
-     * @return void
+     * @param Adapter $adapter an adapter for interfacing with the api
      */
-    public function __construct(Adapter\Adapter $adapter)
+    public function __construct(Adapter $adapter)
     {
         $this->adapter = $adapter;
     }
 
     /**
-     * This method gets the mythic plus scores from the raider.io profile. It includes best runs and alt runs which
-     * will include both fortified and tyrannical settings.
+     * Gets the Mythic+ best and alternate runs from a character's Raider.IO profile.
      *
-     * @param string $character : the character whose information we need
-     * @param string $realm : the realm the character lives on
-     * @param string $region : the region the realm lives on
-     * @return array : mythic plus data
+     * @param string $character the character whose information we need
+     * @param string $realm the realm the character lives on
+     * @param string $region the region the realm lives on
+     * @return array<mixed> the character profile with its Mythic+ runs
+     * @throws \GuzzleHttp\Exception\GuzzleException if the request fails without a response
      */
-    public function getMythicPlusScores(string $character, string $realm, string $region) : array
+    public function getMythicPlusScores(string $character, string $realm, string $region): array
     {
         $params = [
             'region' => $region,
             'realm' => $realm,
             'name' => $character,
-            'fields' => 'mythic_plus_best_runs:all,mythic_plus_alternate_runs:all'
+            'fields' => 'mythic_plus_best_runs:all,mythic_plus_alternate_runs:all',
         ];
 
         return $this->adapter->get(
-            "/characters/profile",
+            '/characters/profile',
             $params
         );
     }

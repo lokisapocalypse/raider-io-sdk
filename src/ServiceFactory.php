@@ -1,16 +1,22 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Fusani\RaiderIO;
 
-use Fusani\RaiderIO\Adapter;
+use Fusani\RaiderIO\Adapter\GuzzleAdapter;
 
+/**
+ * Builds the api services with the adapters they need.
+ */
 class ServiceFactory
 {
-    /** @var string */
-    protected $url;
+    protected string $url;
 
     /**
-     * @param string $version : which version of the api to use
+     * Builds a factory for the given version of the api.
+     *
+     * @param string $version which version of the api to use
      */
     public function __construct(string $version = 'v1')
     {
@@ -18,14 +24,13 @@ class ServiceFactory
     }
 
     /**
-     * This method creates the character service and sets up the guzzle adapter
-     * needed for it.
+     * Creates the character service, with a Guzzle adapter for the api.
      *
-     * @return Character : the character service
+     * @return Character the character service
      */
-    public function createCharacterService() : Character
+    public function createCharacterService(): Character
     {
-        $adapter = new Adapter\GuzzleAdapter($this->url);
+        $adapter = new GuzzleAdapter($this->url);
         return new Character($adapter);
     }
 }
