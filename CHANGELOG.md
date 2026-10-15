@@ -4,6 +4,8 @@ All notable changes to this package are listed here. The format follows [Keep a 
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-10-15
+
 1.0.0 is the first stable release: from here on, breaking changes only come in a new major version. It has breaking changes from 0.0.2, so read the upgrade steps below first.
 
 ### Upgrading from 0.x
@@ -45,5 +47,6 @@ All notable changes to this package are listed here. The format follows [Keep a 
 
 Earlier versions have no changelog.
 
-[Unreleased]: https://github.com/lokisapocalypse/raider-io-sdk/compare/0.0.2...development
+[Unreleased]: https://github.com/lokisapocalypse/raider-io-sdk/compare/1.0.0...development
+[1.0.0]: https://github.com/lokisapocalypse/raider-io-sdk/compare/0.0.2...1.0.0
 [0.0.2]: https://github.com/lokisapocalypse/raider-io-sdk/releases/tag/0.0.2
