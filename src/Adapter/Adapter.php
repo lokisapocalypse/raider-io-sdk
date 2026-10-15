@@ -1,4 +1,7 @@
 <?php
+
+declare(strict_types=1);
+
 namespace Fusani\RaiderIO\Adapter;
 
 /**
@@ -8,33 +11,36 @@ namespace Fusani\RaiderIO\Adapter;
 interface Adapter
 {
     /**
-     * Build an adapter by specifying a url where requests will be made.
+     * Builds an adapter that makes its requests to the given url.
      *
-     * @param $url : the url where the requests will be made
+     * @param string $url the url where the requests will be made
      */
-    public function __construct($url);
+    public function __construct(string $url);
 
     /**
-     * Method for making a get request
+     * Makes a GET request and returns the decoded response.
      *
-     * @param $path : the path where the request will be made
-     * @param $params : the parameters that will be sent
+     * @param string $path the path where the request will be made
+     * @param array<string, string|int|float|bool|null> $params the query string parameters
+     * @return array<mixed> the decoded response
      */
-    public function get($path, $params);
+    public function get(string $path, array $params): array;
 
     /**
-     * Method for making a post request.
+     * Makes a POST request and returns the decoded response.
      *
-     * @param $path : the path where the request will be made
-     * @param $params : the parameters that will be sent
+     * @param string $path the path where the request will be made
+     * @param array<string, string|int|float|bool|null> $params the form parameters
+     * @return array<mixed>|false the decoded response, or false if the request failed
      */
-    public function post($path, $params);
+    public function post(string $path, array $params): array|false;
 
     /**
-     * Method for making a put request.
+     * Makes a PUT request and returns the decoded response.
      *
-     * @param $path : the path where the request will be made
-     * @param $params : the parameters that will be sent
+     * @param string $path the path where the request will be made
+     * @param array<string, string|int|float|bool|null> $params the parameters, sent as a JSON body
+     * @return array<mixed>|false the decoded response, or false if the request failed
      */
-    public function put($path, $params);
+    public function put(string $path, array $params): array|false;
 }

@@ -24,13 +24,13 @@ class AdapterStubTest extends TestCase
     }
 
     /**
-     * Checks that a stub with no responses queued returns null.
+     * Checks that a stub with no responses queued returns an empty array.
      *
      * @return void
      */
     public function testNoResponses(): void
     {
-        $this->assertNull($this->adapter->get('/path', []));
+        $this->assertSame([], $this->adapter->get('/path', []));
     }
 
     /**
@@ -41,13 +41,13 @@ class AdapterStubTest extends TestCase
     public function testReturnsResponsesInOrder(): void
     {
         foreach (['call', 'get', 'post', 'put'] as $response) {
-            $this->adapter->addResponse($response);
+            $this->adapter->addResponse([$response]);
         }
 
-        $this->assertSame('call', $this->adapter->call('service', 'method', []));
-        $this->assertSame('get', $this->adapter->get('/path', []));
-        $this->assertSame('post', $this->adapter->post('/path', []));
-        $this->assertSame('put', $this->adapter->put('/path', []));
-        $this->assertNull($this->adapter->get('/path', []));
+        $this->assertSame(['call'], $this->adapter->call('service', 'method', []));
+        $this->assertSame(['get'], $this->adapter->get('/path', []));
+        $this->assertSame(['post'], $this->adapter->post('/path', []));
+        $this->assertSame(['put'], $this->adapter->put('/path', []));
+        $this->assertSame([], $this->adapter->get('/path', []));
     }
 }

@@ -1,0 +1,7 @@
+{
+    "preset": "psr12",
+    "rules": {
+        "php_unit_method_casing": {"case": "camel_case"},
+        "unary_operator_spaces": {"only_dec_inc": false}
+    }
+}

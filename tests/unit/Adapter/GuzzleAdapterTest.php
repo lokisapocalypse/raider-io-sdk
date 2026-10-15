@@ -9,6 +9,7 @@ use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Middleware;
 use GuzzleHttp\Psr7\Response;
+use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\RequestInterface;
@@ -16,8 +17,8 @@ use Psr\Http\Message\RequestInterface;
 #[CoversClass(GuzzleAdapter::class)]
 class GuzzleAdapterTest extends TestCase
 {
-    /** @var list<array{request: RequestInterface}> */
-    protected array $history = [];
+    /** @var list<RequestInterface> */
+    protected array $requests = [];
 
     /**
      * Builds an adapter whose Guzzle client returns the given responses instead of calling the network.
@@ -28,7 +29,10 @@ class GuzzleAdapterTest extends TestCase
     protected function adapterReturning(array $responses): GuzzleAdapter
     {
         $stack = HandlerStack::create(new MockHandler($responses));
-        $stack->push(Middleware::history($this->history));
+        $stack->push(Middleware::mapRequest(function (RequestInterface $request): RequestInterface {
+            $this->requests[] = $request;
+            return $request;
+        }));
 
         $adapter = new GuzzleAdapter('https://raider.io/api/v1');
         (fn () => $this->client = new Client(['handler' => $stack]))->call($adapter);
@@ -61,6 +65,18 @@ class GuzzleAdapterTest extends TestCase
     }
 
     /**
+     * Checks that a url without a scheme or host is rejected.
+     *
+     * @return void
+     */
+    public function testConstructRejectsRelativeUrl(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+
+        new GuzzleAdapter('/api/v1');
+    }
+
+    /**
      * Checks that the base url can be changed after the adapter is built.
      *
      * @return void
@@ -86,10 +102,10 @@ class GuzzleAdapterTest extends TestCase
         $result = $adapter->get('/characters/profile', ['region' => 'us', 'name' => 'Thrall']);
 
         $this->assertSame(['name' => 'Thrall'], $result);
-        $this->assertSame('GET', $this->history[0]['request']->getMethod());
+        $this->assertSame('GET', $this->requests[0]->getMethod());
         $this->assertSame(
             'https://raider.io/api/v1/characters/profile?region=us&name=Thrall',
-            (string) $this->history[0]['request']->getUri()
+            (string) $this->requests[0]->getUri()
         );
     }
 
@@ -118,9 +134,9 @@ class GuzzleAdapterTest extends TestCase
         $adapter = $this->adapterReturning([new Response(200, [], '{"ok":true}')]);
 
         $this->assertSame(['ok' => true], $adapter->post('/test', ['a' => 'b']));
-        $this->assertSame('POST', $this->history[0]['request']->getMethod());
-        $this->assertSame('https://raider.io/api/v1/test', (string) $this->history[0]['request']->getUri());
-        $this->assertSame('a=b', (string) $this->history[0]['request']->getBody());
+        $this->assertSame('POST', $this->requests[0]->getMethod());
+        $this->assertSame('https://raider.io/api/v1/test', (string) $this->requests[0]->getUri());
+        $this->assertSame('a=b', (string) $this->requests[0]->getBody());
     }
 
     /**
@@ -133,5 +149,46 @@ class GuzzleAdapterTest extends TestCase
         $adapter = $this->adapterReturning([new Response(500)]);
 
         $this->assertFalse($adapter->post('/test', []));
+    }
+
+    /**
+     * Checks that a PUT request goes to the base url plus the path, sends the params as a JSON body and returns
+     * the decoded JSON body.
+     *
+     * @return void
+     */
+    public function testPutSuccess(): void
+    {
+        $adapter = $this->adapterReturning([new Response(200, [], '{"ok":true}')]);
+
+        $this->assertSame(['ok' => true], $adapter->put('/test', ['a' => 'b']));
+        $this->assertSame('PUT', $this->requests[0]->getMethod());
+        $this->assertSame('https://raider.io/api/v1/test', (string) $this->requests[0]->getUri());
+        $this->assertSame('application/json', $this->requests[0]->getHeaderLine('Content-Type'));
+        $this->assertSame('{"a":"b"}', (string) $this->requests[0]->getBody());
+    }
+
+    /**
+     * Checks that an error response from a PUT request returns false.
+     *
+     * @return void
+     */
+    public function testPutFailure(): void
+    {
+        $adapter = $this->adapterReturning([new Response(500)]);
+
+        $this->assertFalse($adapter->put('/test', []));
+    }
+
+    /**
+     * Checks that a response body that isn't a JSON object or array is returned as an empty array.
+     *
+     * @return void
+     */
+    public function testGetNonJsonBody(): void
+    {
+        $adapter = $this->adapterReturning([new Response(200, [], 'not json')]);
+
+        $this->assertSame([], $adapter->get('/characters/profile', []));
     }
 }

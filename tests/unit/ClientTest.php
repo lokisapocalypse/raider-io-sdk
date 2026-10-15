@@ -12,12 +12,15 @@ use PHPUnit\Framework\TestCase;
 class ClientTest extends TestCase
 {
     /**
-     * Checks that a client can be built with an adapter.
+     * Checks that a client keeps the adapter it's built with.
      *
      * @return void
      */
     public function testConstruct(): void
     {
-        $this->assertInstanceOf(Client::class, new Client($this->createStub(Adapter::class)));
+        $adapter = $this->createStub(Adapter::class);
+        $client = new Client($adapter);
+
+        $this->assertSame($adapter, (fn () => $this->adapter)->call($client));
     }
 }
