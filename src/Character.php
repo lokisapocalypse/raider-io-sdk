@@ -31,15 +31,15 @@ class Character
      *
      * @param string $character the character whose information we need
      * @param string $realm the realm the character lives on
-     * @param string $region the region the realm lives on
+     * @param Region $region the region the realm lives on
      * @return array<mixed> the character profile with its Mythic+ runs
      * @throws NotFoundException if the api can't find the character or realm
      * @throws RaiderIOException if the request fails or the api responds with another error
      */
-    public function getMythicPlusScores(string $character, string $realm, string $region): array
+    public function getMythicPlusScores(string $character, string $realm, Region $region): array
     {
         $params = [
-            'region' => $region,
+            'region' => $region->value,
             'realm' => $realm,
             'name' => $character,
             'fields' => 'mythic_plus_best_runs:all,mythic_plus_alternate_runs:all',

@@ -10,7 +10,6 @@ use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Exception\BadResponseException;
 use GuzzleHttp\Exception\GuzzleException;
 use InvalidArgumentException;
-use JsonException;
 
 /**
  * Adapter that makes its requests with Guzzle.
@@ -102,37 +101,7 @@ class GuzzleAdapter implements Adapter
      */
     public function get(string $path, array $params): array
     {
-        return $this->request('GET', $path . '?' . http_build_query($params), []);
-    }
-
-    /**
-     * {@inheritDoc}
-     *
-     * @param string $path the path where the request will be made
-     * @param array<string, string|int|float|bool|null> $params the form parameters
-     * @return array<mixed> the decoded response
-     * @throws RaiderIOException if the request fails or the api responds with an error
-     */
-    public function post(string $path, array $params): array
-    {
-        return $this->request('POST', $path, ['form_params' => $params]);
-    }
-
-    /**
-     * {@inheritDoc}
-     *
-     * @param string $path the path where the request will be made
-     * @param array<string, string|int|float|bool|null> $params the parameters, sent as a JSON body
-     * @return array<mixed> the decoded response
-     * @throws RaiderIOException if the request fails or the api responds with an error
-     * @throws JsonException if the parameters can't be encoded as JSON
-     */
-    public function put(string $path, array $params): array
-    {
-        return $this->request('PUT', $path, [
-            'headers' => ['Content-Type' => 'application/json'],
-            'body' => json_encode($params, JSON_THROW_ON_ERROR),
-        ]);
+        return $this->request('GET', $path . '?' . http_build_query($params));
     }
 
     /**
@@ -140,17 +109,12 @@ class GuzzleAdapter implements Adapter
      *
      * @param string $method the HTTP method
      * @param string $path the path, and query string if any, appended to the base url
-     * @param array{
-     *     form_params?: array<string, string|int|float|bool|null>,
-     *     headers?: array<string, string>,
-     *     body?: string
-     * } $options the Guzzle request options
      * @return array<mixed> the decoded response
      * @throws RaiderIOException if the request fails or the api responds with an error
      */
-    protected function request(string $method, string $path, array $options): array
+    protected function request(string $method, string $path): array
     {
-        $options += [
+        $options = [
             'timeout' => $this->timeout,
             'connect_timeout' => $this->connectTimeout,
         ];
