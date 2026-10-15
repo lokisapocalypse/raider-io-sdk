@@ -18,12 +18,14 @@
     },
     "autoload-dev": {
         "psr-4": {
-            "Fusani\\RaiderIO\\": "tests/unit/"
+            "Fusani\\RaiderIO\\": "tests/unit/",
+            "Fusani\\RaiderIO\\Live\\": "tests/live/"
         }
     },
     "scripts": {
         "test": "phpunit",
         "test:coverage": "phpunit --coverage-text",
+        "test:live": "phpunit --testsuite Live",
         "lint": "pint --test",
         "lint:fix": "pint",
         "analyse": "phpstan analyse"
