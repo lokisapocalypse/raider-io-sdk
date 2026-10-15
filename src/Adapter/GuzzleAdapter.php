@@ -4,27 +4,48 @@ declare(strict_types=1);
 
 namespace Fusani\RaiderIO\Adapter;
 
+use Fusani\RaiderIO\Exception\RaiderIOException;
 use GuzzleHttp\Client;
-use GuzzleHttp\Exception;
+use GuzzleHttp\ClientInterface;
+use GuzzleHttp\Exception\BadResponseException;
+use GuzzleHttp\Exception\GuzzleException;
 use InvalidArgumentException;
+use JsonException;
 
 /**
  * Adapter that makes its requests with Guzzle.
  */
 class GuzzleAdapter implements Adapter
 {
+    public const DEFAULT_TIMEOUT = 10.0;
+
+    public const DEFAULT_CONNECT_TIMEOUT = 5.0;
+
     protected string $baseUrl;
 
-    protected Client $client;
+    protected ClientInterface $client;
+
+    protected float $timeout;
+
+    protected float $connectTimeout;
 
     /**
      * Builds an adapter whose base url is the scheme, host and path of the given url.
      *
+     * The timeouts are sent with every request, so they apply to a client passed in as well.
+     *
      * @param string $url the url where the requests will be made
-     * @throws InvalidArgumentException if the url has no scheme or host
+     * @param ClientInterface|null $client the Guzzle client to send requests with, or null for a default one
+     * @param float $timeout the seconds to wait for a whole request, or 0 to wait forever
+     * @param float $connectTimeout the seconds to wait to connect, or 0 to wait forever
+     * @throws InvalidArgumentException if the url has no scheme or host, or a timeout is negative
      */
-    public function __construct(string $url)
-    {
+    public function __construct(
+        string $url,
+        ?ClientInterface $client = null,
+        float $timeout = self::DEFAULT_TIMEOUT,
+        float $connectTimeout = self::DEFAULT_CONNECT_TIMEOUT
+    ) {
         // break the url down
         $parts = parse_url($url);
 
@@ -32,18 +53,21 @@ class GuzzleAdapter implements Adapter
             throw new InvalidArgumentException(sprintf('"%s" is not an absolute url.', $url));
         }
 
+        if ($timeout < 0 || $connectTimeout < 0) {
+            throw new InvalidArgumentException('Timeouts can\'t be negative.');
+        }
+
         // build the base url
-        $baseUrl = sprintf(
+        $this->baseUrl = sprintf(
             '%s://%s%s',
             $parts['scheme'],
             $parts['host'],
             $parts['path'] ?? ''
         );
 
-        $this->baseUrl = $baseUrl;
-
-        // build the guzzle client
-        $this->client = new Client();
+        $this->client = $client ?? new Client();
+        $this->timeout = $timeout;
+        $this->connectTimeout = $connectTimeout;
     }
 
     /**
@@ -71,37 +95,14 @@ class GuzzleAdapter implements Adapter
     /**
      * {@inheritDoc}
      *
-     * An error response is returned as an array with `success`, `statusCode` and `message`.
-     *
      * @param string $path the path where the request will be made
      * @param array<string, string|int|float|bool|null> $params the query string parameters
-     * @return array<mixed> the decoded response, or the error details
-     * @throws \GuzzleHttp\Exception\GuzzleException if the request fails without a response
+     * @return array<mixed> the decoded response
+     * @throws RaiderIOException if the request fails or the api responds with an error
      */
     public function get(string $path, array $params): array
     {
-        $url = $path . '?' . http_build_query($params);
-
-        // if a region is set, override the base url
-        if (isset($params['region']) && is_string($params['region']) && $params['region'] !== '') {
-            $this->baseUrl = str_replace('us.', $params['region'] . '.', $this->baseUrl);
-        }
-
-        try {
-            $response = $this->client->get($this->baseUrl . $url);
-            return $this->decode($response->getBody()->getContents());
-        } catch (Exception\BadResponseException $e) {
-            // Guzzle throws exceptions on non-200 series HTTP codes.
-            // BadResponseException means authentication failed,
-            // other exceptions probably means that the request is bad
-            $response = $e->getResponse();
-
-            return [
-                'success' => false,
-                'statusCode' => $response->getStatusCode(),
-                'message' => $response->getReasonPhrase(),
-            ];
-        }
+        return $this->request('GET', $path . '?' . http_build_query($params), []);
     }
 
     /**
@@ -109,22 +110,12 @@ class GuzzleAdapter implements Adapter
      *
      * @param string $path the path where the request will be made
      * @param array<string, string|int|float|bool|null> $params the form parameters
-     * @return array<mixed>|false the decoded response, or false if the request failed
-     * @throws \GuzzleHttp\Exception\GuzzleException if the request fails without a response
+     * @return array<mixed> the decoded response
+     * @throws RaiderIOException if the request fails or the api responds with an error
      */
-    public function post(string $path, array $params): array|false
+    public function post(string $path, array $params): array
     {
-        try {
-            $response = $this->client->post($this->baseUrl . $path, ['form_params' => $params]);
-            $results = $this->decode($response->getBody()->getContents());
-        } catch (Exception\BadResponseException $e) {
-            // Guzzle throws exceptions on non-200 series HTTP codes.
-            // BadResponseException means authentication failed,
-            // other exceptions probably means that the request is bad
-            return false;
-        }
-
-        return $results;
+        return $this->request('POST', $path, ['form_params' => $params]);
     }
 
     /**
@@ -132,29 +123,49 @@ class GuzzleAdapter implements Adapter
      *
      * @param string $path the path where the request will be made
      * @param array<string, string|int|float|bool|null> $params the parameters, sent as a JSON body
-     * @return array<mixed>|false the decoded response, or false if the request failed
-     * @throws \GuzzleHttp\Exception\GuzzleException if the request fails without a response
-     * @throws \JsonException if the parameters can't be encoded as JSON
+     * @return array<mixed> the decoded response
+     * @throws RaiderIOException if the request fails or the api responds with an error
+     * @throws JsonException if the parameters can't be encoded as JSON
      */
-    public function put(string $path, array $params): array|false
+    public function put(string $path, array $params): array
     {
+        return $this->request('PUT', $path, [
+            'headers' => ['Content-Type' => 'application/json'],
+            'body' => json_encode($params, JSON_THROW_ON_ERROR),
+        ]);
+    }
+
+    /**
+     * Sends a request to the base url plus the path, with the timeouts, and decodes the response.
+     *
+     * @param string $method the HTTP method
+     * @param string $path the path, and query string if any, appended to the base url
+     * @param array{
+     *     form_params?: array<string, string|int|float|bool|null>,
+     *     headers?: array<string, string>,
+     *     body?: string
+     * } $options the Guzzle request options
+     * @return array<mixed> the decoded response
+     * @throws RaiderIOException if the request fails or the api responds with an error
+     */
+    protected function request(string $method, string $path, array $options): array
+    {
+        $options += [
+            'timeout' => $this->timeout,
+            'connect_timeout' => $this->connectTimeout,
+        ];
+
         try {
-            $response = $this->client->put(
-                $this->baseUrl . $path,
-                [
-                    'headers' => ['Content-Type' => 'application/json'],
-                    'body' => json_encode($params, JSON_THROW_ON_ERROR),
-                ]
-            );
-            $results = $this->decode($response->getBody()->getContents());
-        } catch (Exception\BadResponseException $e) {
-            // Guzzle throws exceptions on non-200 series HTTP codes.
-            // BadResponseException means authentication failed,
-            // other exceptions probably means that the request is bad
-            return false;
+            $response = $this->client->request($method, $this->baseUrl . $path, $options);
+        } catch (BadResponseException $e) {
+            // Guzzle throws on 4xx and 5xx responses
+            throw RaiderIOException::fromResponse($e->getResponse(), $e);
+        } catch (GuzzleException $e) {
+            // no usable response: connection failures, timeouts, too many redirects
+            throw RaiderIOException::fromTransferFailure($e);
         }
 
-        return $results;
+        return $this->decode((string) $response->getBody());
     }
 
     /**

@@ -20,7 +20,7 @@ class AdapterStubTest extends TestCase
      */
     protected function setUp(): void
     {
-        $this->adapter = new AdapterStub('https://raider.io/api/v1');
+        $this->adapter = new AdapterStub();
     }
 
     /**
