@@ -1,1 +1,6 @@
+*.swp
 vendor/
+build/
+coverage/
+.phpunit.cache/
+phpunit.xml

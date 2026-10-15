@@ -1,60 +1,53 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Fusani\RaiderIO\Adapter;
 
-use GuzzleHttp\Exception;
-use Fusani\RaiderIO\SimpleTestCase;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\TestCase;
 
-/**
- * @covers Fusani\RaiderIO\Adapter\AdapterStub
- */
-class AdapterStubTest extends SimpleTestCase
+#[CoversClass(AdapterStub::class)]
+class AdapterStubTest extends TestCase
 {
-    protected $adapter;
+    /** @var AdapterStub */
+    protected AdapterStub $adapter;
 
-    public function setup()
+    /**
+     * Builds a stub with no responses queued.
+     *
+     * @return void
+     */
+    protected function setUp(): void
     {
-        $this->adapter = new AdapterStub('http://www.google.com');
+        $this->adapter = new AdapterStub('https://raider.io/api/v1');
     }
 
-    public function testCall()
+    /**
+     * Checks that a stub with no responses queued returns null.
+     *
+     * @return void
+     */
+    public function testNoResponses(): void
     {
-        $this->adapter->addResponse('hai');
-        $this->assertEquals('hai', $this->adapter->call('what', 'the', 'ish'));
+        $this->assertNull($this->adapter->get('/path', []));
     }
 
-    public function testConstruct()
+    /**
+     * Checks that every request method returns the queued responses in order.
+     *
+     * @return void
+     */
+    public function testReturnsResponsesInOrder(): void
     {
-        $this->assertNull($this->adapter->call('nothing', 'is', 'here'));
-    }
-
-    public function testGetFailure()
-    {
-        try {
-            $this->adapter->get('wont', 'work');
-            $this->assertTrue(false);
-        } catch (\Exception $e) {
-            $this->assertTrue(true);
+        foreach (['call', 'get', 'post', 'put'] as $response) {
+            $this->adapter->addResponse($response);
         }
-    }
 
-    public function testPostFailure()
-    {
-        try {
-            $this->adapter->post('wont', 'work');
-            $this->assertTrue(false);
-        } catch (\Exception $e) {
-            $this->assertTrue(true);
-        }
-    }
-
-    public function testPutFailure()
-    {
-        try {
-            $this->adapter->put('wont', 'work');
-            $this->assertTrue(false);
-        } catch (\Exception $e) {
-            $this->assertTrue(true);
-        }
+        $this->assertSame('call', $this->adapter->call('service', 'method', []));
+        $this->assertSame('get', $this->adapter->get('/path', []));
+        $this->assertSame('post', $this->adapter->post('/path', []));
+        $this->assertSame('put', $this->adapter->put('/path', []));
+        $this->assertNull($this->adapter->get('/path', []));
     }
 }
