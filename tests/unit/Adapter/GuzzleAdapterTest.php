@@ -230,6 +230,27 @@ class GuzzleAdapterTest extends TestCase
     }
 
     /**
+     * Checks that the 400 the live api sends for an unknown character throws a NotFoundException.
+     *
+     * @return void
+     */
+    public function testGetUnknownCharacter(): void
+    {
+        $adapter = $this->adapterReturning([
+            new Response(
+                400,
+                [],
+                '{"statusCode":400,"error":"Bad Request","message":"Could not find requested character"}'
+            ),
+        ]);
+
+        $this->expectException(NotFoundException::class);
+        $this->expectExceptionCode(400);
+
+        $adapter->get('/characters/profile', []);
+    }
+
+    /**
      * Checks that a 429 response throws a RateLimitException.
      *
      * @return void

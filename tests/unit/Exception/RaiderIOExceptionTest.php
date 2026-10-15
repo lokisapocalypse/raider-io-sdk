@@ -94,6 +94,64 @@ class RaiderIOExceptionTest extends TestCase
     }
 
     /**
+     * Checks that a 400 whose api message says a character or realm wasn't found gives a NotFoundException, keeping
+     * 400 as the code.
+     *
+     * @param string $apiMessage the api's error message
+     * @return void
+     */
+    #[DataProvider('notFoundMessageProvider')]
+    public function testFromResponseBadRequestNotFound(string $apiMessage): void
+    {
+        $e = RaiderIOException::fromResponse($this->badRequest($apiMessage));
+
+        $this->assertSame(NotFoundException::class, $e::class);
+        $this->assertSame(400, $e->getCode());
+        $this->assertSame('Raider.IO responded with 400 Bad Request: ' . $apiMessage, $e->getMessage());
+    }
+
+    /**
+     * Lists the not-found messages the live api sends with a 400.
+     *
+     * @return array<string, array{string}>
+     */
+    public static function notFoundMessageProvider(): array
+    {
+        return [
+            'character' => ['Could not find requested character'],
+            'realm' => ['Failed to find realm notarealrealmxyz in region us'],
+        ];
+    }
+
+    /**
+     * Checks that a 400 for other bad input, such as an invalid region, gives the base exception.
+     *
+     * @return void
+     */
+    public function testFromResponseBadRequestInvalidInput(): void
+    {
+        $e = RaiderIOException::fromResponse($this->badRequest('Invalid request query input'));
+
+        $this->assertSame(RaiderIOException::class, $e::class);
+        $this->assertSame(400, $e->getCode());
+    }
+
+    /**
+     * Builds a 400 response with a body in the shape the live api sends.
+     *
+     * @param string $apiMessage the api's error message
+     * @return Response the response
+     * @throws \JsonException if the body can't be encoded
+     */
+    protected function badRequest(string $apiMessage): Response
+    {
+        return new Response(400, [], json_encode(
+            ['statusCode' => 400, 'error' => 'Bad Request', 'message' => $apiMessage],
+            JSON_THROW_ON_ERROR
+        ));
+    }
+
+    /**
      * Checks that a transfer failure gives a code of 0 and keeps the original message and exception.
      *
      * @return void

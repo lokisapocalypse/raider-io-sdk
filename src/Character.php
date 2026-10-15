@@ -33,7 +33,7 @@ class Character
      * @param string $realm the realm the character lives on
      * @param string $region the region the realm lives on
      * @return array<mixed> the character profile with its Mythic+ runs
-     * @throws NotFoundException if the api can't find the character
+     * @throws NotFoundException if the api can't find the character or realm
      * @throws RaiderIOException if the request fails or the api responds with another error
      */
     public function getMythicPlusScores(string $character, string $realm, string $region): array
