@@ -1,6 +1,29 @@
 {
     "name": "fusani/raider-io",
-    "description": "Raider io api sdk",
+    "description": "PHP SDK for the Raider.IO API: World of Warcraft Mythic+ scores and runs for characters",
+    "type": "library",
+    "keywords": [
+        "raider.io",
+        "raiderio",
+        "world of warcraft",
+        "warcraft",
+        "wow",
+        "mythic plus",
+        "api",
+        "sdk"
+    ],
+    "homepage": "https://github.com/lokisapocalypse/raider-io-sdk",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Brian Lamb",
+            "email": "brian.lamb@fusaniapplications.com"
+        }
+    ],
+    "support": {
+        "issues": "https://github.com/lokisapocalypse/raider-io-sdk/issues",
+        "source": "https://github.com/lokisapocalypse/raider-io-sdk"
+    },
     "require": {
         "php": "^8.5",
         "guzzlehttp/guzzle": "^8.2"
