@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Fusani\RaiderIO;
 
 use Fusani\RaiderIO\Adapter\Adapter;
+use Fusani\RaiderIO\Exception\NotFoundException;
+use Fusani\RaiderIO\Exception\RaiderIOException;
 
 /**
  * Service for the Raider.IO character endpoints.
@@ -31,7 +33,8 @@ class Character
      * @param string $realm the realm the character lives on
      * @param string $region the region the realm lives on
      * @return array<mixed> the character profile with its Mythic+ runs
-     * @throws \GuzzleHttp\Exception\GuzzleException if the request fails without a response
+     * @throws NotFoundException if the api can't find the character or realm
+     * @throws RaiderIOException if the request fails or the api responds with another error
      */
     public function getMythicPlusScores(string $character, string $realm, string $region): array
     {

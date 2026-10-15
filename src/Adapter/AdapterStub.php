@@ -13,11 +13,9 @@ class AdapterStub implements Adapter
     protected array $responses;
 
     /**
-     * Builds a stub with no responses queued. The url is ignored.
-     *
-     * @param string $url the url where the requests would be made
+     * Builds a stub with no responses queued.
      */
-    public function __construct(string $url)
+    public function __construct()
     {
         $this->responses = [];
     }
