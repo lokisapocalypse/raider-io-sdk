@@ -201,7 +201,7 @@ class GuzzleAdapterTest extends TestCase
     {
         $adapter = $this->adapterReturning([new Response(200, [], '{}')], 'https://raider.io/api/v1', 30.0, 2.5);
 
-        $adapter->post('/test', []);
+        $adapter->get('/test', []);
 
         $options = $this->handler->getLastOptions();
         $this->assertSame(30.0, $options['timeout']);
@@ -285,68 +285,6 @@ class GuzzleAdapterTest extends TestCase
             $this->assertSame('Raider.IO request failed: Connection refused', $e->getMessage());
             $this->assertInstanceOf(ConnectException::class, $e->getPrevious());
         }
-    }
-
-    /**
-     * Checks that a POST request sends the params as a form body and returns the decoded JSON body.
-     *
-     * @return void
-     */
-    public function testPostSuccess(): void
-    {
-        $adapter = $this->adapterReturning([new Response(200, [], '{"ok":true}')]);
-
-        $this->assertSame(['ok' => true], $adapter->post('/test', ['a' => 'b']));
-        $this->assertSame('POST', $this->requests[0]->getMethod());
-        $this->assertSame('https://raider.io/api/v1/test', (string) $this->requests[0]->getUri());
-        $this->assertSame('a=b', (string) $this->requests[0]->getBody());
-    }
-
-    /**
-     * Checks that an error response from a POST request throws a RaiderIOException with the status as its code.
-     *
-     * @return void
-     */
-    public function testPostFailure(): void
-    {
-        $adapter = $this->adapterReturning([new Response(500)]);
-
-        $this->expectException(RaiderIOException::class);
-        $this->expectExceptionCode(500);
-
-        $adapter->post('/test', []);
-    }
-
-    /**
-     * Checks that a PUT request goes to the base url plus the path, sends the params as a JSON body and returns
-     * the decoded JSON body.
-     *
-     * @return void
-     */
-    public function testPutSuccess(): void
-    {
-        $adapter = $this->adapterReturning([new Response(200, [], '{"ok":true}')]);
-
-        $this->assertSame(['ok' => true], $adapter->put('/test', ['a' => 'b']));
-        $this->assertSame('PUT', $this->requests[0]->getMethod());
-        $this->assertSame('https://raider.io/api/v1/test', (string) $this->requests[0]->getUri());
-        $this->assertSame('application/json', $this->requests[0]->getHeaderLine('Content-Type'));
-        $this->assertSame('{"a":"b"}', (string) $this->requests[0]->getBody());
-    }
-
-    /**
-     * Checks that an error response from a PUT request throws a RaiderIOException with the status as its code.
-     *
-     * @return void
-     */
-    public function testPutFailure(): void
-    {
-        $adapter = $this->adapterReturning([new Response(500)]);
-
-        $this->expectException(RaiderIOException::class);
-        $this->expectExceptionCode(500);
-
-        $adapter->put('/test', []);
     }
 
     /**

@@ -6,9 +6,11 @@ namespace Fusani\RaiderIO;
 
 use Fusani\RaiderIO\Adapter\Adapter;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
 
 #[CoversClass(Character::class)]
+#[UsesClass(Region::class)]
 class CharacterTest extends TestCase
 {
     /**
@@ -34,6 +36,6 @@ class CharacterTest extends TestCase
 
         $character = new Character($adapter);
 
-        $this->assertSame($response, $character->getMythicPlusScores('Thrall', 'Area 52', 'us'));
+        $this->assertSame($response, $character->getMythicPlusScores('Thrall', 'Area 52', Region::US));
     }
 }
