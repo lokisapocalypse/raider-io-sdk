@@ -1,21 +1,23 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Fusani\RaiderIO;
 
-use Fusani\RaiderIO\SimpleTestCase;
+use Fusani\RaiderIO\Adapter\Adapter;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\TestCase;
 
-/**
- * @covers Fusani\Blizzard\Client
- */
-class ClientTest extends SimpleTestCase
+#[CoversClass(Client::class)]
+class ClientTest extends TestCase
 {
-    public function testConstruct()
+    /**
+     * Checks that a client can be built with an adapter.
+     *
+     * @return void
+     */
+    public function testConstruct(): void
     {
-        $adapter = $this->getMockBuilder('Fusani\RaiderIO\Adapter\Adapter')
-            ->disableOriginalConstructor()
-            ->getMock();
-        $client = new Client($adapter);
-
-        $this->assertAttributeInstanceOf('Fusani\RaiderIO\Adapter\Adapter', 'adapter', $client);
+        $this->assertInstanceOf(Client::class, new Client($this->createStub(Adapter::class)));
     }
 }
